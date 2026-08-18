@@ -1,7 +1,16 @@
 {
-  "name": "node-starter",
+  "name": "khongdech-photo-finish",
+  "version": "1.9.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "qrcode": "latest"
+  },
+  "devDependencies": {
+    "wrangler": "latest"
   }
 }

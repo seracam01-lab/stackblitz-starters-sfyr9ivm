@@ -165,7 +165,7 @@ select,input{background:#fff;color:#173356;border:1px solid #c9dcf7;box-shadow:i
   <div id="qr" class="qr">กำลังเตรียม QR…</div>
   <div>
     <b>เชื่อมเครื่องที่ 2</b>
-    <p>① เปิดโปรแกรมบนเครื่องหลัก → ② รอ HTTPS พร้อม → ③ สแกน QR → ④ กด “เปิดกล้อง 2 และเชื่อม”</p>
+    <p>① เปิดเว็บบนเครื่องหลัก → ② รอ QR ขึ้น → ③ สแกน QR ด้วยเครื่องที่ 2 → ④ กด “เปิดกล้อง 2 และเชื่อม”</p>
     <p>รหัสห้อง: <span id="room" class="room"></span></p>
     <p id="server" class="status wait">⏳ ตรวจ Server…</p>
     <p id="pairStatus" class="status wait">⏳ รอเครื่องที่ 2…</p>
@@ -660,17 +660,37 @@ if(isMain){
   let qrMade='';
   async function infoPoll(){
     try{
-      const j=await api('/api/info');
-      if(j.publicUrl){
-        const target=j.publicUrl+'/?role=cam2&sid='+encodeURIComponent(sid);const mobileMain=j.publicUrl+'/';
-        $('server').textContent='🟢 Server + HTTPS พร้อม';$('server').className='status ok';
-        $('publicLink').textContent='ลิงก์สำรอง Camera 2: '+target;$('publicLink').href=target;$('mobileMainLink').textContent=mobileMain;$('mobileMainLink').href=mobileMain;$('copyMobileMain').onclick=async()=>{try{await navigator.clipboard.writeText(mobileMain);$('copyMobileMain').textContent='✅ คัดลอกแล้ว'}catch(e){prompt('คัดลอกลิงก์นี้',mobileMain)}};$('diag').textContent='';
-        if(qrMade!==target){qrMade=target;const qr='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=6&data='+encodeURIComponent(target);$('qr').innerHTML='<img alt="QR Code" src="'+qr+'" onerror="this.parentNode.innerHTML=\'QR โหลดไม่สำเร็จ<br>กดลิงก์สำรองด้านขวา\'">'}
-      }else{
-        $('server').textContent=(j.state==='error'?'🔴 ':'⏳ ')+(j.message||'กำลังสร้าง HTTPS…');$('server').className='status '+(j.state==='error'?'bad':'wait');$('diag').textContent=j.lastError?('รายละเอียด: '+j.lastError.replace(/\s+/g,' ').slice(0,300)):''
+      // Cloudflare version: use the actual public HTTPS origin directly.
+      // The public Cloudflare HTTPS address is used directly.
+      const base=window.location.origin;
+      const target=base+'/?role=cam2&sid='+encodeURIComponent(sid);
+      const mobileMain=base+'/';
+      $('server').textContent='🟢 Cloudflare พร้อม — QR พร้อมใช้งาน';
+      $('server').className='status ok';
+      $('publicLink').textContent='ลิงก์สำรอง Camera 2: '+target;
+      $('publicLink').href=target;
+      $('mobileMainLink').textContent=mobileMain;
+      $('mobileMainLink').href=mobileMain;
+      $('copyMobileMain').onclick=async()=>{
+        try{
+          await navigator.clipboard.writeText(mobileMain);
+          $('copyMobileMain').textContent='✅ คัดลอกแล้ว'
+        }catch(e){
+          prompt('คัดลอกลิงก์นี้',mobileMain)
+        }
+      };
+      $('diag').textContent='';
+      if(qrMade!==target){
+        qrMade=target;
+        const qr='/api/qr?data='+encodeURIComponent(target);
+        $('qr').innerHTML='<img alt="QR Code" width="220" height="220" src="'+qr+'" onerror="this.parentNode.innerHTML=\'QR โหลดไม่สำเร็จ<br>ใช้ลิงก์สำรองด้านล่าง\'">'
       }
-    }catch(e){$('server').textContent='🔴 Server ในเครื่องหยุดทำงาน';$('server').className='status bad';$('diag').textContent='กรุณาปิดหน้าต่างเดิม แล้วเปิด FINAL PRO ใหม่'}
-    setTimeout(infoPoll,1200)
+    }catch(e){
+      $('server').textContent='🔴 ไม่สามารถเตรียมลิงก์ Camera 2 ได้';
+      $('server').className='status bad';
+      $('diag').textContent=String(e&&e.message||e)
+    }
+    setTimeout(infoPoll,1500)
   }
   infoPoll();renderResults()
 }else{
